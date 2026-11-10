@@ -25,7 +25,7 @@ export function WeekStrip({ date, today, counts, onSelect, className }: Props) {
   return (
     <nav
       aria-label="Денови во неделата"
-      className={cn("rounded-2xl bg-card px-2 pt-1 pb-3 shadow-card md:px-3", className)}
+      className={cn("rounded-2xl bg-card px-2 pt-0.5 pb-2 shadow-card md:px-3", className)}
       {...swipe}
     >
       <div className="flex items-center gap-1 pl-2">

@@ -25,7 +25,7 @@ const PILL: Record<CapacityLevel, string> = {
   free: "bg-secondary text-muted-foreground",
   ok: "bg-secondary text-secondary-foreground",
   warn: "bg-warning-soft text-warning-foreground",
-  over: "bg-destructive-soft text-destructive",
+  over: "bg-destructive-soft text-destructive-strong",
 };
 
 /** "9 / 17" pill; over capacity it also says by how much. */
@@ -56,7 +56,7 @@ export function CapacityPill({ pieces, className }: { pieces: number; className?
   );
 }
 
-/** Slim capacity bar. */
+/** Slim 6px capacity bar. */
 export function CapacityBar({ pieces, className }: { pieces: number; className?: string }) {
   const level = capacityLevel(pieces);
 
@@ -65,7 +65,7 @@ export function CapacityBar({ pieces, className }: { pieces: number; className?:
       value={Math.min(100, (pieces / HOURLY_CAPACITY) * 100)}
       aria-label="Зафатеност на часот"
       aria-valuetext={`${pieces} од ${HOURLY_CAPACITY} парчиња`}
-      className={cn("h-1 bg-muted", className)}
+      className={cn("h-1.5 bg-muted", className)}
       indicatorClassName={cn("rounded-full", BAR[level])}
     />
   );

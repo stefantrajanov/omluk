@@ -13,6 +13,7 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-destructive-soft: var(--destructive-soft);
+  --color-destructive-strong: var(--destructive-strong);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -28,6 +29,7 @@
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-success-soft: var(--success-soft);
+  --color-success-strong: var(--success-strong);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
   --color-warning-soft: var(--warning-soft);
@@ -43,36 +45,38 @@
   --shadow-float: 0 4px 14px rgb(0 0 0 / 0.14), 0 1px 3px rgb(0 0 0 / 0.08);
 }
 
-/* Single light theme, Apple HIG grouped palette with an ember accent. */
+/* Single light theme, warm Apple-style neutrals with an ember accent. */
 :root {
   color-scheme: light;
   --font-system:
     -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --background: #efeff4;
-  --foreground: #1c1c1e;
+  --background: #f2f0ec;
+  --foreground: #1c1917;
   --card: #ffffff;
-  --card-foreground: #1c1c1e;
+  --card-foreground: #1c1917;
   --popover: #ffffff;
-  --popover-foreground: #1c1c1e;
+  --popover-foreground: #1c1917;
   --primary: #c2410c;
   --primary-foreground: #ffffff;
-  --secondary: #e9e9ee;
-  --secondary-foreground: #1c1c1e;
-  --muted: #e5e5ea;
-  --muted-foreground: #636366;
+  --secondary: #ece9e4;
+  --secondary-foreground: #1c1917;
+  --muted: #e7e3dd;
+  --muted-foreground: #66615b;
   --accent: #fbe9e1;
   --accent-foreground: #9a3412;
   --destructive: #d70015;
   --destructive-foreground: #ffffff;
   --destructive-soft: #fde7e9;
+  --destructive-strong: #b00012;
   --success: #248a3d;
   --success-foreground: #ffffff;
   --success-soft: #e3f4e7;
-  --warning: #ffcc00;
-  --warning-foreground: #3a2e00;
-  --warning-soft: #fff6cc;
-  --border: #d1d1d6;
-  --input: #c7c7cc;
+  --success-strong: #15702d;
+  --warning: #f2a900;
+  --warning-foreground: #7a4f00;
+  --warning-soft: #fff1c2;
+  --border: #d6d1ca;
+  --input: #cbc5bd;
   --ring: #c2410c;
   --radius: 0.625rem;
 }

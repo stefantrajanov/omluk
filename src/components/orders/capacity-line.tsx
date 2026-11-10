@@ -15,7 +15,7 @@ const LEVELS = {
   loading: { icon: Gauge, box: "bg-card shadow-card text-foreground", iconTone: "text-muted-foreground" },
   ok: { icon: CircleCheck, box: "bg-success-soft text-foreground", iconTone: "text-success" },
   near: { icon: TriangleAlert, box: "bg-warning-soft text-warning-foreground", iconTone: "" },
-  over: { icon: OctagonAlert, box: "bg-destructive-soft text-destructive", iconTone: "" },
+  over: { icon: OctagonAlert, box: "bg-destructive-soft text-destructive-strong", iconTone: "text-destructive" },
 } as const;
 
 export function CapacityLine({

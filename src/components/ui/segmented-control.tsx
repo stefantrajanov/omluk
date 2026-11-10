@@ -75,7 +75,7 @@ export function SegmentedControl<T extends string>({
               "flex min-w-0 flex-1 basis-0 items-center justify-center gap-1.5 rounded-[10px] px-3 text-center tabular-nums transition-[background-color,box-shadow,color] duration-150 outline-none select-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-40",
               size === "lg" ? "min-h-11 text-base" : "min-h-9 text-[15px]",
               selected
-                ? "bg-card font-semibold text-foreground shadow-[0_1px_3px_rgb(0_0_0/0.12),0_0_0_0.5px_rgb(0_0_0/0.04)]"
+                ? "bg-card font-semibold text-accent-foreground shadow-[0_0_0_1.5px_var(--primary),0_1px_3px_rgb(0_0_0/0.12)]"
                 : "font-medium text-foreground hover:bg-card/50",
             )}
           >

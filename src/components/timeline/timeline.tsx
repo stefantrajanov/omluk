@@ -3,7 +3,7 @@
 import { CalendarPlusIcon, PlusIcon } from "lucide-react";
 import { Fragment, useEffect, useRef, type CSSProperties } from "react";
 import { hourlyLoad } from "@/lib/capacity";
-import { CLOSE_HOUR, OPEN_HOUR, SLOT_MINUTES, formatHM, hourWindowLabel } from "@/lib/dates";
+import { CLOSE_HOUR, OPEN_HOUR, SLOT_MINUTES, formatHM, hourWindowLabel, isPastSlotAt } from "@/lib/dates";
 import type { Order } from "@/lib/orders/types";
 import { cn } from "@/lib/utils";
 import { CapacityBar, CapacityPill } from "./capacity-meter";
@@ -15,6 +15,8 @@ type Props = {
   orders: Order[];
   /** Shop-local minutes since midnight when `date` is today, else null. */
   nowMinutes: number | null;
+  /** Shop-local today; enables hiding add buttons for past slots. */
+  today?: string;
   onOpenOrder: (order: Order) => void;
   onAddAt: (time: string) => void;
 };
@@ -48,16 +50,11 @@ function groupByHour(orders: Order[]): Map<number, SlotGroup[]> {
   return byHour;
 }
 
-/** Slot for a quick add in an empty hour: next slot from now in the current hour, else :00. */
-function quickAddSlot(hour: number, nowMinutes: number | null): string {
-  if (nowMinutes !== null && Math.floor(nowMinutes / 60) === hour) {
-    const next = SLOT_MINUTES.find((m) => hour * 60 + m >= nowMinutes);
-    if (next !== undefined) return formatHM(hour, next);
-  }
-  return formatHM(hour, 0);
-}
-
-export function Timeline({ date, orders, nowMinutes, onOpenOrder, onAddAt }: Props) {
+export function Timeline({ date, orders, nowMinutes, today, onOpenOrder, onAddAt }: Props) {
+  const clock = today === undefined ? null : { date: today, minutes: nowMinutes ?? 0 };
+  // Bookable slots of an hour, in order.
+  const openSlots = (hour: number) =>
+    SLOT_MINUTES.map((m) => formatHM(hour, m)).filter((t) => !clock || !isPastSlotAt(date, t, clock));
   const hours = visibleHours(orders);
   const load = hourlyLoad(orders);
   const groups = groupByHour(orders);
@@ -79,14 +76,15 @@ export function Timeline({ date, orders, nowMinutes, onOpenOrder, onAddAt }: Pro
   }, [date, nowMinutes, firstHour, lastHour]);
 
   return (
-    <div className="@container px-4 pt-4 pb-32 @2xl:px-6 @2xl:pt-6">
+    <div className="@container/timeline px-4 pt-4 pb-32 @2xl:px-6 @2xl:pt-6">
       {orders.length === 0 && <EmptyDay />}
 
       <ol aria-label="Распоред по часови" className="flex flex-col">
-        {hours.map((hour) => {
+        {hours.map((hour, i) => {
           const slots = groups.get(hour);
           const past = nowMinutes !== null && (hour + 1) * 60 <= nowMinutes;
           const now = hour === nowHour ? nowMinutes : null;
+          const addTimes = openSlots(hour);
           return slots ? (
             <BusyHour
               key={hour}
@@ -95,11 +93,19 @@ export function Timeline({ date, orders, nowMinutes, onOpenOrder, onAddAt }: Pro
               slots={slots}
               past={past}
               nowMinutes={now}
+              addTimes={addTimes}
               onOpenOrder={onOpenOrder}
               onAddAt={onAddAt}
             />
           ) : (
-            <FreeHour key={hour} hour={hour} nowMinutes={now} addTime={quickAddSlot(hour, nowMinutes)} onAddAt={onAddAt} />
+            <FreeHour
+              key={hour}
+              hour={hour}
+              afterFree={i > 0 && !groups.has(hours[i - 1])}
+              nowMinutes={now}
+              addTime={addTimes[0]}
+              onAddAt={onAddAt}
+            />
           );
         })}
       </ol>
@@ -121,33 +127,50 @@ function EmptyDay() {
   );
 }
 
-const GUTTER = "grid grid-cols-[52px_minmax(0,1fr)]";
-const HOUR_LABEL = "type-footnote text-muted-foreground tabular-nums";
+// Hour gutter only in wide containers; narrow ones give the cards the full width.
+const GUTTER = "@2xl:grid @2xl:grid-cols-[52px_minmax(0,1fr)]";
+const HOUR_LABEL = "hidden type-footnote text-muted-foreground tabular-nums @2xl:block";
 
 function FreeHour({
   hour,
+  afterFree,
   nowMinutes,
   addTime,
   onAddAt,
 }: {
   hour: number;
+  /** Previous row is also a free hour. */
+  afterFree: boolean;
   nowMinutes: number | null;
-  addTime: string;
+  /** Earliest bookable slot; none for past hours. */
+  addTime?: string;
   onAddAt: (time: string) => void;
 }) {
   return (
     <li id={`hour-${hour}`} aria-label={hourWindowLabel(hour)} className={cn(GUTTER, "relative scroll-mt-52")}>
       <span className={cn(HOUR_LABEL, "pt-4")}>{formatHM(hour, 0)}</span>
-      <div className="flex min-h-13 items-center justify-between gap-3 border-t border-border pl-1">
-        <span className="type-subhead text-muted-foreground">Слободно</span>
-        <button
-          type="button"
-          onClick={() => onAddAt(addTime)}
-          aria-label={`Додај нарачка во ${addTime}`}
-          className="-mr-2 flex size-11 items-center justify-center rounded-full text-primary transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 active:bg-muted"
-        >
-          <PlusIcon className="size-5" aria-hidden />
-        </button>
+      {/* Narrow: hairline only between free hours, never under a card. */}
+      <div
+        className={cn(
+          "flex min-h-13 items-center justify-between gap-3 border-t pl-3 @2xl:border-border @2xl:pl-1",
+          afterFree ? "border-border" : "border-transparent",
+        )}
+      >
+        {/* Narrow: sits above the now line so the line never strikes the text. */}
+        <span className="relative z-20 bg-background pr-1 type-subhead text-muted-foreground @2xl:static @2xl:bg-transparent @2xl:pr-0">
+          <span className="tabular-nums @2xl:hidden">{formatHM(hour, 0)} · </span>
+          Слободно
+        </span>
+        {addTime && (
+          <button
+            type="button"
+            onClick={() => onAddAt(addTime)}
+            aria-label={`Додај нарачка во ${addTime}`}
+            className="-mr-2 flex size-11 items-center justify-center rounded-full text-primary transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 active:bg-muted"
+          >
+            <PlusIcon className="size-5" aria-hidden />
+          </button>
+        )}
       </div>
       {nowMinutes !== null && (
         <NowMarker
@@ -167,12 +190,13 @@ type BusyHourProps = {
   slots: SlotGroup[];
   past: boolean;
   nowMinutes: number | null;
+  /** Bookable slots, offered as quick-add pills. */
+  addTimes: string[];
   onOpenOrder: (order: Order) => void;
   onAddAt: (time: string) => void;
 };
 
-function BusyHour({ hour, pieces, slots, past, nowMinutes, onOpenOrder, onAddAt }: BusyHourProps) {
-  const freeSlots = SLOT_MINUTES.filter((m) => !slots.some((s) => s.minutes === hour * 60 + m));
+function BusyHour({ hour, pieces, slots, past, nowMinutes, addTimes, onOpenOrder, onAddAt }: BusyHourProps) {
   // Index of the first slot group after "now"; the marker goes before it.
   const nowIndex = nowMinutes === null ? -1 : slots.findIndex((s) => s.minutes > nowMinutes);
   const nowAt = nowMinutes === null ? null : nowIndex === -1 ? slots.length : nowIndex;
@@ -184,8 +208,9 @@ function BusyHour({ hour, pieces, slots, past, nowMinutes, onOpenOrder, onAddAt 
 
       <section
         className={cn(
-          "flex min-w-0 flex-col gap-4 rounded-2xl p-4 shadow-card @2xl:p-5",
-          past ? "bg-card/80" : "bg-card",
+          "flex min-w-0 flex-col gap-4 rounded-2xl bg-card p-3 @2xl:p-5",
+          // Past hours sit flat; text keeps full contrast.
+          past ? "shadow-none" : "shadow-card",
         )}
       >
         <header className="flex flex-col gap-2.5">
@@ -198,7 +223,7 @@ function BusyHour({ hour, pieces, slots, past, nowMinutes, onOpenOrder, onAddAt 
           <CapacityBar pieces={pieces} />
         </header>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 @2xl:gap-4">
           {slots.map((slot, i) => (
             <Fragment key={slot.time}>
               {nowAt === i && nowMinutes !== null && <NowMarker minutes={nowMinutes} />}
@@ -208,29 +233,27 @@ function BusyHour({ hour, pieces, slots, past, nowMinutes, onOpenOrder, onAddAt 
           {nowAt === slots.length && nowMinutes !== null && <NowMarker minutes={nowMinutes} />}
         </div>
 
-        {freeSlots.length > 0 && (
+        {addTimes.length > 0 && (
+          // Narrow: four equal columns so all slots fit one row.
           <div
             role="group"
             aria-label="Слободни термини"
-            className="-mb-1.5 flex flex-wrap items-center gap-x-2 border-t border-border pt-1.5"
+            className="-mb-1 grid grid-cols-4 items-center gap-x-1.5 border-t border-border pt-1.5 @md:flex @md:gap-x-2"
           >
-            {freeSlots.map((m) => {
-              const time = formatHM(hour, m);
-              return (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => onAddAt(time)}
-                  aria-label={`Додај нарачка во ${time}`}
-                  className="group flex h-11 items-center outline-none"
-                >
-                  <span className="inline-flex h-8 items-center gap-1 rounded-full bg-background px-3 type-footnote font-semibold text-muted-foreground tabular-nums transition-colors group-hover:text-foreground group-focus-visible:ring-3 group-focus-visible:ring-ring/50 group-active:bg-muted">
-                    <PlusIcon className="size-3.5 text-primary" aria-hidden />
-                    {time}
-                  </span>
-                </button>
-              );
-            })}
+            {addTimes.map((time) => (
+              <button
+                key={time}
+                type="button"
+                onClick={() => onAddAt(time)}
+                aria-label={`Додај нарачка во ${time}`}
+                className="group flex h-11 min-w-0 items-center outline-none"
+              >
+                <span className="inline-flex h-8 w-full items-center justify-center gap-1 rounded-full bg-background px-2 type-footnote font-semibold text-muted-foreground tabular-nums transition-colors group-hover:text-foreground group-focus-visible:ring-3 group-focus-visible:ring-ring/50 group-active:bg-muted @md:w-auto @md:px-3">
+                  <PlusIcon className="size-3.5 text-primary" aria-hidden />
+                  {time}
+                </span>
+              </button>
+            ))}
           </div>
         )}
       </section>
@@ -240,12 +263,15 @@ function BusyHour({ hour, pieces, slots, past, nowMinutes, onOpenOrder, onAddAt 
 
 function SlotGroupView({ slot, onOpenOrder }: { slot: SlotGroup; onOpenOrder: (order: Order) => void }) {
   return (
-    <div className="flex flex-col gap-2 @2xl:flex-row @2xl:gap-4">
-      <h3 className="type-subhead font-semibold tabular-nums @2xl:w-12 @2xl:shrink-0 @2xl:pt-3">{slot.time}</h3>
-      <ul className="grid min-w-0 flex-1 grid-cols-1 gap-2 @2xl:grid-cols-2 @5xl:grid-cols-3">
+    <div className="flex flex-col @2xl:flex-row @2xl:gap-4">
+      {/* Narrow: time moves into each tile; heading stays for screen readers. */}
+      <h3 className="sr-only type-subhead font-semibold tabular-nums @2xl:not-sr-only @2xl:w-12 @2xl:shrink-0 @2xl:pt-3">
+        {slot.time}
+      </h3>
+      <ul className="grid min-w-0 flex-1 grid-cols-1 gap-3 @2xl:grid-cols-[repeat(auto-fit,minmax(320px,1fr))]">
         {slot.orders.map((order) => (
-          <li key={order.id} className="flex">
-            <OrderCard order={order} onOpen={onOpenOrder} />
+          <li key={order.id} className="flex items-start">
+            <OrderCard order={order} onOpen={onOpenOrder} time={slot.time} />
           </li>
         ))}
       </ul>
@@ -270,13 +296,20 @@ function NowMarker({
   return (
     <div
       aria-hidden
-      className={cn("pointer-events-none z-10 flex items-center", withGutter && GUTTER, className)}
+      className={cn(
+        "pointer-events-none z-10 flex items-center",
+        // Narrow free hour: label at the line's right end, clear of the "+" button.
+        withGutter && cn(GUTTER, "pr-11 @2xl:pr-0"),
+        className,
+      )}
       style={style}
     >
       <span
         className={cn(
           "type-caption font-semibold text-destructive tabular-nums",
-          withGutter ? "justify-self-start bg-background pr-1" : "mr-1.5",
+          withGutter
+            ? "order-last ml-1.5 @2xl:order-none @2xl:ml-0 @2xl:justify-self-start @2xl:bg-background @2xl:pr-1"
+            : "mr-1.5",
         )}
       >
         {label}

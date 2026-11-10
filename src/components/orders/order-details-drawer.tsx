@@ -59,8 +59,8 @@ function StatusBadge({ status }: { status: OrderStatus }) {
     <Badge
       variant="secondary"
       className={cn(
-        "h-7 gap-1 px-3 text-[13px] leading-[18px] font-semibold [&>svg]:size-3.5!",
-        done && "bg-success-soft text-success",
+        "h-6 gap-1 px-2.5 text-[13px] leading-[18px] font-semibold [&>svg]:size-3.5!",
+        done && "bg-success-soft text-success-strong [&>svg]:text-success",
       )}
     >
       {done && <Check strokeWidth={3} aria-hidden />}
@@ -124,7 +124,7 @@ function OrderDetailsSheet({
         variant={done ? "secondary" : "default"}
         disabled={busy}
         onClick={toggleStatus}
-        className={cn("w-full", !done && "bg-success text-success-foreground hover:bg-success/90")}
+        className={cn("w-full", !done && "bg-success-strong text-success-foreground hover:bg-success-strong/90 active:bg-success-strong/85")}
       >
         {statusPending ? (
           <Loader2 className="animate-spin" aria-hidden />
@@ -186,13 +186,16 @@ function OrderDetailsSheet({
       onOpenChange={onOpenChange}
       title={<span className="block type-title2 break-words">{order.customerName}</span>}
       description={
-        <>
-          <span className="font-semibold tabular-nums text-foreground">{order.time}</span>
-          {" · "}
-          {capitalize(formatLongDate(order.date))}
-        </>
+        // Badge sits on the subtitle line so long names can wrap freely.
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span>
+            <span className="font-semibold tabular-nums text-foreground">{order.time}</span>
+            {" · "}
+            {capitalize(formatLongDate(order.date))}
+          </span>
+          <StatusBadge status={status} />
+        </span>
       }
-      headerAction={<StatusBadge status={status} />}
       footer={footer}
     >
       <div className="flex flex-col gap-6 pb-2">

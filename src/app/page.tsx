@@ -1,4 +1,5 @@
 import { DatabaseIcon, WifiOffIcon } from "lucide-react";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { DayScreen } from "@/components/shell/day-screen";
 import { DaySkeleton } from "@/components/shell/day-skeleton";
@@ -42,6 +43,8 @@ async function load(date: string): Promise<Loaded> {
 
 async function DayLoader({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
   const { d } = await searchParams;
+  // Read the clock at request time, never during prerender.
+  await connection();
   const today = todayISO();
   const date = typeof d === "string" && isValidISODate(d) ? d : today;
   const result = await load(date);

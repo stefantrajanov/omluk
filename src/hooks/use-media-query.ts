@@ -22,3 +22,4 @@ function getServerSnapshot(): boolean {
 
 export const MD_QUERY = "(min-width: 768px)";
 export const LG_QUERY = "(min-width: 1024px)";
+export const FINE_POINTER_QUERY = "(pointer: fine)";

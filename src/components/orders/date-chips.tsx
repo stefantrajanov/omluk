@@ -12,9 +12,12 @@ const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 export function DateChips({
   value,
   onChange,
+  minDate,
 }: {
   value: string;
   onChange: (date: string) => void;
+  /** Earliest pickable date; earlier days are disabled. */
+  minDate?: string;
 }) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const today = todayISO();
@@ -34,22 +37,30 @@ export function DateChips({
           {capitalize(formatLongDate(value))}
         </span>
       </div>
-      <div role="group" aria-label="Датум" className="flex flex-wrap gap-2">
-        <ChoiceChip selected={value === today} onClick={() => pick(today)}>
+      <div role="group" aria-label="Датум" className="grid grid-cols-3 gap-2">
+        <ChoiceChip
+          selected={value === today}
+          disabled={minDate !== undefined && today < minDate}
+          onClick={() => pick(today)}
+          className="px-2"
+        >
           Денес
         </ChoiceChip>
-        <ChoiceChip selected={value === tomorrow} onClick={() => pick(tomorrow)}>
+        <ChoiceChip selected={value === tomorrow} onClick={() => pick(tomorrow)} className="px-2">
           Утре
         </ChoiceChip>
+        {/* Short label keeps all three on one row; the full date is shown above. */}
         <ChoiceChip
           selected={isOther}
           aria-expanded={calendarOpen}
+          aria-label="Друг датум"
           onClick={() => setCalendarOpen((o) => !o)}
+          className="gap-1 px-2"
         >
-          <CalendarDays className="size-[18px]" aria-hidden />
-          {isOther ? capitalize(formatLongDate(value)) : "Друг датум"}
+          <CalendarDays className="size-[18px] shrink-0" aria-hidden />
+          Друг
           <ChevronDown
-            className={cn("size-4 transition-transform duration-200", calendarOpen && "rotate-180")}
+            className={cn("size-4 shrink-0 transition-transform duration-200", calendarOpen && "rotate-180")}
             aria-hidden
           />
         </ChoiceChip>
@@ -61,6 +72,7 @@ export function DateChips({
             weekStartsOn={1}
             selected={parseISODate(value)}
             defaultMonth={parseISODate(value)}
+            disabled={minDate ? { before: parseISODate(minDate) } : undefined}
             onSelect={(d) => d && pick(toISODate(d))}
           />
         </div>

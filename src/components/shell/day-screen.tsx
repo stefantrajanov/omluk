@@ -62,7 +62,7 @@ export function DayScreen({ date, today, orders, weekCounts }: Props) {
   }
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[360px_minmax(0,1fr)]">
+    <div className="min-h-dvh lg:grid lg:grid-cols-[320px_minmax(0,1fr)]">
       <Sidebar
         date={date}
         today={today}
@@ -96,6 +96,7 @@ export function DayScreen({ date, today, orders, weekCounts }: Props) {
               date={date}
               orders={orders}
               nowMinutes={nowMinutes}
+              today={now?.date ?? today}
               onOpenOrder={(order) => setDetailsId(order.id)}
               onAddAt={(time) => openForm(undefined, time)}
             />
@@ -103,18 +104,14 @@ export function DayScreen({ date, today, orders, weekCounts }: Props) {
         </div>
       </div>
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 lg:hidden">
-        <div className="mx-auto flex max-w-3xl justify-end px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:px-6">
-          <Button
-            size="lg"
-            onClick={() => openForm()}
-            className="pointer-events-auto rounded-full pr-6 pl-5 shadow-float"
-          >
-            <PlusIcon className="size-[22px]" strokeWidth={2.5} />
-            Нова нарачка
-          </Button>
-        </div>
-      </div>
+      <Button
+        size="icon"
+        onClick={() => openForm()}
+        aria-label="Нова нарачка"
+        className="fixed right-4 bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-20 size-14 rounded-full shadow-float lg:hidden"
+      >
+        <PlusIcon className="size-7" strokeWidth={2.5} />
+      </Button>
 
       <CalendarDrawer
         open={calendarOpen}

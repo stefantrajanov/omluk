@@ -44,6 +44,35 @@ export function nowHM(): { hour: number; minute: number } {
   return { hour, minute };
 }
 
+export type ShopClock = { date: string; minutes: number };
+
+/** Shop-local date and minutes since midnight. */
+export function shopNow(): ShopClock {
+  const { date, hour, minute } = skopjeNow();
+  return { date, minutes: hour * 60 + minute };
+}
+
+const SLOT_LENGTH = 15;
+
+/** Earliest bookable slot start (minutes) on `date`; null when the whole day is past. */
+export function firstOpenMinute(date: string, now: ShopClock): number | null {
+  if (date < now.date) return null;
+  if (date > now.date) return 0;
+  return Math.floor(now.minutes / SLOT_LENGTH) * SLOT_LENGTH;
+}
+
+/** Slot's 15-minute window has fully ended at `now`. */
+export function isPastSlotAt(date: string, time: string, now: ShopClock): boolean {
+  if (date !== now.date) return date < now.date;
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m + SLOT_LENGTH <= now.minutes;
+}
+
+/** Slot's 15-minute window has fully ended (Europe/Skopje). */
+export function isPastSlot(date: string, time: string): boolean {
+  return isPastSlotAt(date, time, shopNow());
+}
+
 export function nextSlot(): { date: string; time: string } {
   const { date, hour, minute } = skopjeNow();
   const total = hour * 60 + Math.ceil((minute + 1) / 15) * 15;

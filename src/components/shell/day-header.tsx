@@ -22,9 +22,11 @@ export function DayHeader({ date, today, onSelectDate, onOpenCalendar }: Props) 
         <div className="mx-auto flex h-14 max-w-3xl items-center gap-2 px-4 md:px-6">
           <Logo variant="horizontal" className="h-8 w-auto shrink-0 text-foreground" />
           <div className="flex-1" />
-          <Button variant="ghost" onClick={() => onSelectDate(today)} disabled={isToday} className="px-3">
-            Денес
-          </Button>
+          {!isToday && (
+            <Button variant="ghost" onClick={() => onSelectDate(today)} className="px-3 font-semibold">
+              Денес
+            </Button>
+          )}
           <Button variant="ghost" size="icon" onClick={onOpenCalendar} aria-label="Отвори календар">
             <CalendarDaysIcon className="size-[22px]" />
           </Button>
@@ -32,8 +34,12 @@ export function DayHeader({ date, today, onSelectDate, onOpenCalendar }: Props) 
       </header>
 
       <header className="sticky top-0 z-30 hidden border-b border-border bg-background/80 backdrop-blur-xl backdrop-saturate-150 lg:block">
-        <div className="mx-auto flex max-w-5xl items-center gap-3 px-8 py-4">
-          <h1 className="min-w-0 flex-1 truncate type-large-title first-letter:uppercase">{formatLongDate(date)}</h1>
+        <div className="mx-auto flex max-w-5xl items-end gap-3 px-8 py-4">
+          {/* Fixed height fits the "Денес" eyebrow so every day matches. */}
+          <div className="flex h-[61px] min-w-0 flex-1 flex-col justify-end">
+            {isToday && <p className="type-subhead font-semibold text-primary">Денес</p>}
+            <h1 className="truncate type-large-title first-letter:uppercase">{formatLongDate(date)}</h1>
+          </div>
           <Button
             variant="secondary"
             size="icon"
@@ -42,9 +48,11 @@ export function DayHeader({ date, today, onSelectDate, onOpenCalendar }: Props) 
           >
             <ChevronLeftIcon strokeWidth={2.5} />
           </Button>
-          <Button variant="secondary" onClick={() => onSelectDate(today)} disabled={isToday}>
-            Денес
-          </Button>
+          {!isToday && (
+            <Button variant="ghost" onClick={() => onSelectDate(today)} className="font-semibold">
+              Денес
+            </Button>
+          )}
           <Button
             variant="secondary"
             size="icon"

@@ -11,11 +11,13 @@ export function TimePicker({
   hour,
   minute,
   extraHour,
+  minMinutes,
   onChange,
 }: {
   hour: number;
   minute: number;
   extraHour?: number; // order's own hour when outside opening hours
+  minMinutes?: number; // earliest pickable slot, minutes since midnight
   onChange: (hour: number, minute: number) => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -24,8 +26,9 @@ export function TimePicker({
   const hours = useMemo(() => {
     const list = Array.from({ length: CLOSE_HOUR - OPEN_HOUR }, (_, i) => OPEN_HOUR + i);
     if (extraHour !== undefined && !list.includes(extraHour)) list.push(extraHour);
-    return list.sort((a, b) => a - b);
-  }, [extraHour]);
+    // Drop hours whose last slot is before the minimum.
+    return list.filter((h) => minMinutes === undefined || h * 60 + 45 >= minMinutes).sort((a, b) => a - b);
+  }, [extraHour, minMinutes]);
 
   // Center the selected hour once on mount.
   useEffect(() => {
@@ -47,7 +50,7 @@ export function TimePicker({
         ref={scrollerRef}
         role="group"
         aria-label="Час"
-        className="scrollbar-none relative -mx-4 flex gap-2 overflow-x-auto px-4 py-0.5"
+        className="scrollbar-none relative -mx-4 flex gap-2 overflow-x-auto px-4 py-1"
       >
         {hours.map((h) => (
           <ChoiceChip
@@ -68,6 +71,7 @@ export function TimePicker({
         onValueChange={(m) => onChange(hour, Number(m))}
         options={SLOT_MINUTES.map((m) => ({
           value: String(m),
+          disabled: minMinutes !== undefined && hour * 60 + m < minMinutes,
           label: (
             <>
               <span aria-hidden>:{pad(m)}</span>

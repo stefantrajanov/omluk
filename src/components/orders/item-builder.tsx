@@ -159,9 +159,9 @@ const FROM_PRICE = Object.fromEntries(
   ]),
 ) as Record<Category, number>;
 
-// "Со кашкавал" → "Кашкавал": the field label already says what it is.
+// "Со кашкавал и јајца" → "Кашкавал + јајца": the field label already says what it is.
 const shortFilling = (label: string) => {
-  const s = label.replace(/^Со\s+/, "");
+  const s = label.replace(/^Со\s+/, "").replace(/\s+и\s+/, " + ");
   return s.charAt(0).toUpperCase() + s.slice(1);
 };
 
@@ -179,7 +179,7 @@ export function ItemPicker({ onAdd }: { onAdd: (sel: ItemSelection) => void }) {
     category === "pie" ? { category, size, meat, filling } : { category, size };
 
   return (
-    <GroupedCard className="flex flex-col gap-5 p-4">
+    <GroupedCard className="flex flex-col gap-4 p-4">
       <div role="group" aria-label="Вид" className="grid grid-cols-2 gap-2">
         {CATEGORIES.map((c) => {
           const selected = category === c.key;
@@ -190,8 +190,8 @@ export function ItemPicker({ onAdd }: { onAdd: (sel: ItemSelection) => void }) {
               aria-pressed={selected}
               onClick={() => setCategory(c.key)}
               className={cn(
-                "relative flex min-h-24 flex-col items-start gap-0.5 rounded-xl p-3 text-left transition-[background-color,box-shadow,transform] duration-150 outline-none select-none focus-visible:ring-3 focus-visible:ring-ring/50 active:scale-[0.98]",
-                selected ? "bg-accent ring-2 ring-primary ring-inset" : "bg-background hover:bg-muted",
+                "relative flex min-h-[104px] flex-col items-start gap-0.5 rounded-xl bg-card p-3 text-left ring-inset transition-[background-color,box-shadow,transform] duration-150 outline-none select-none focus-visible:ring-3 focus-visible:ring-ring/50 active:scale-[0.98]",
+                selected ? "ring-2 ring-primary" : "ring-1 ring-border hover:bg-background",
               )}
             >
               {selected && (
@@ -199,15 +199,9 @@ export function ItemPicker({ onAdd }: { onAdd: (sel: ItemSelection) => void }) {
                   <Check className="size-3.5" strokeWidth={3} aria-hidden />
                 </span>
               )}
-              <span
-                className={cn(
-                  "pr-6 type-subhead font-semibold",
-                  selected ? "text-accent-foreground" : "text-foreground",
-                )}
-              >
-                {c.label}
-              </span>
+              <span className="pr-6 type-subhead font-semibold text-foreground">{c.label}</span>
               {c.hint && <span className="type-caption text-muted-foreground">{c.hint}</span>}
+              {/* Pinned to the bottom so prices line up across the grid. */}
               <span className="mt-auto pt-1 type-footnote text-muted-foreground tabular-nums">
                 од {formatPrice(FROM_PRICE[c.key])}
               </span>
@@ -217,12 +211,26 @@ export function ItemPicker({ onAdd }: { onAdd: (sel: ItemSelection) => void }) {
       </div>
 
       <Field label="Големина">
-        <SegmentedControl aria-label="Големина" size="lg" value={size} onValueChange={setSize} options={toOptions(SIZES)} />
+        <SegmentedControl
+          aria-label="Големина"
+          size="lg"
+          value={size}
+          onValueChange={setSize}
+          options={toOptions(SIZES)}
+          className={wrapLabels}
+        />
       </Field>
       {category === "pie" && (
         <>
           <Field label="Месо">
-            <SegmentedControl aria-label="Месо" size="lg" value={meat} onValueChange={setMeat} options={toOptions(MEATS)} />
+            <SegmentedControl
+              aria-label="Месо"
+              size="lg"
+              value={meat}
+              onValueChange={setMeat}
+              options={toOptions(MEATS)}
+              className={wrapLabels}
+            />
           </Field>
           <Field label="Додаток">
             <SegmentedControl
@@ -231,7 +239,7 @@ export function ItemPicker({ onAdd }: { onAdd: (sel: ItemSelection) => void }) {
               value={filling}
               onValueChange={setFilling}
               options={toOptions(FILLINGS, shortFilling)}
-              className="[&>button]:leading-tight"
+              className={fitLabels}
             />
           </Field>
         </>
@@ -250,6 +258,11 @@ export function ItemPicker({ onAdd }: { onAdd: (sel: ItemSelection) => void }) {
     </GroupedCard>
   );
 }
+
+// Long Cyrillic labels wrap instead of truncating.
+const wrapLabels = "[&>button]:py-1 [&>button]:leading-tight";
+// Content-sized segments keep three options on one line on phones.
+const fitLabels = "[&>button]:flex-auto [&>button]:basis-auto [&>button]:px-2.5 [&>button]:text-[15px] [&>button]:whitespace-nowrap";
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (

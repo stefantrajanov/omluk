@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getSupabase } from "@/lib/supabase/server";
-import { isValidISODate } from "@/lib/dates";
+import { isPastSlot, isValidISODate } from "@/lib/dates";
 import { isSchemaMissing, SchemaMissingError } from "@/lib/orders/queries";
 import { buildSavePayload } from "@/lib/orders/validation";
 import type { ActionResult, OrderInput, OrderStatus } from "@/lib/orders/types";
@@ -10,6 +10,7 @@ import type { ActionResult, OrderInput, OrderStatus } from "@/lib/orders/types";
 const MSG_SCHEMA = new SchemaMissingError().message;
 const MSG_NOT_FOUND = "Нарачката не постои или е избришана.";
 const MSG_GENERIC = "Настана грешка при зачувување. Обидете се повторно.";
+const MSG_PAST = "Не може да се додаде нарачка во минато време.";
 
 const isUuid = (s: unknown): s is string =>
   typeof s === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
@@ -24,6 +25,9 @@ function fail(error: { code?: string; message?: string }): { ok: false; error: s
 async function saveOrder(id: string | null, input: OrderInput): Promise<ActionResult<{ id: string }>> {
   const built = buildSavePayload(input);
   if (!built.ok) return built;
+  // New orders only; edits may keep or move to past slots.
+  const { order_date, order_time } = built.payload.order;
+  if (id === null && isPastSlot(order_date, order_time)) return { ok: false, error: MSG_PAST };
   try {
     const { data, error } = await getSupabase().rpc("save_order", {
       p_id: id,
