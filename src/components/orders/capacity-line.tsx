@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 type LoadState = { date: string; load: Record<number, number> | null };
 
-const NEAR_FULL = 13;
+const NEAR_FULL = Math.ceil(HOURLY_CAPACITY * 0.8);
 
 const LEVELS = {
   loading: { icon: Gauge, box: "bg-card shadow-card text-foreground", iconTone: "text-muted-foreground" },

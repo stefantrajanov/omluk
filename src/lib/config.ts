@@ -2,7 +2,7 @@ export const SHOP_NAME = "Фурна Омлук Коцеви";
 export const SHOP_TIME_ZONE = "Europe/Skopje";
 
 /** Max pieces (pies + pizzas) the oven can bake per hour. Soft limit. */
-export const HOURLY_CAPACITY = 16;
+export const HOURLY_CAPACITY = 17;
 /** Share of capacity at which an hour is shown as nearly full. */
 export const CAPACITY_WARNING_RATIO = 0.75;
 

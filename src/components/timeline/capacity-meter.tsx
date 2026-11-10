@@ -6,7 +6,7 @@ import { pluralize } from "./format";
 
 export type CapacityLevel = "free" | "ok" | "warn" | "over";
 
-/** Warn from 13 of 16 (80%); over when above capacity. */
+/** Warn from 80% of capacity; over when above it. */
 export function capacityLevel(pieces: number): CapacityLevel {
   if (pieces === 0) return "free";
   if (pieces > HOURLY_CAPACITY) return "over";
@@ -28,7 +28,7 @@ const PILL: Record<CapacityLevel, string> = {
   over: "bg-destructive-soft text-destructive",
 };
 
-/** "9 / 16" pill; over capacity it also says by how much. */
+/** "9 / 17" pill; over capacity it also says by how much. */
 export function CapacityPill({ pieces, className }: { pieces: number; className?: string }) {
   const level = capacityLevel(pieces);
   const over = pieces - HOURLY_CAPACITY;

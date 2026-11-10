@@ -5,7 +5,7 @@ export type Filling = "eggs" | "cheese" | "cheese_eggs";
 // meat + filling only for "pie"
 export type ItemSelection = { category: Category; size: Size; meat?: Meat; filling?: Filling };
 
-export const HOURLY_CAPACITY = 16;
+export const HOURLY_CAPACITY = 17;
 
 export const CATEGORIES: { key: Category; label: string; hint?: string }[] = [
   { key: "pie", label: "Пити" },
