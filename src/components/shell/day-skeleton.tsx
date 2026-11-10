@@ -1,24 +1,47 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { SHOP_NAME } from "@/lib/config";
 
+/** Loading placeholder mirroring the day screen at each breakpoint. */
 export function DaySkeleton() {
   return (
-    <div className="mx-auto min-h-dvh w-full max-w-md" aria-busy="true">
+    <div className="min-h-dvh lg:grid lg:grid-cols-[360px_minmax(0,1fr)]" aria-busy="true">
       <span className="sr-only">Се вчитува…</span>
-      <div className="border-b px-4 pt-3 pb-3">
-        <p className="font-heading text-sm font-semibold text-primary">{SHOP_NAME}</p>
-        <Skeleton className="mt-1 h-7 w-52" />
-        <div className="mt-3 grid grid-cols-7 gap-1">
-          {Array.from({ length: 7 }, (_, i) => (
-            <Skeleton key={i} className="h-15 rounded-xl" />
-          ))}
+
+      <aside className="hidden h-dvh flex-col gap-6 border-r border-border bg-card px-6 pt-6 lg:flex">
+        <Skeleton className="h-10 w-44" />
+        <Skeleton className="h-[50px] w-full" />
+        <Skeleton className="h-[372px] w-full rounded-2xl" />
+        <Skeleton className="h-40 w-full rounded-2xl" />
+      </aside>
+
+      <div className="min-w-0">
+        <div className="sticky top-0 border-b border-border bg-background/80 pt-safe lg:hidden">
+          <div className="mx-auto flex h-14 max-w-3xl items-center gap-2 px-4 md:px-6">
+            <Skeleton className="h-8 w-32" />
+            <div className="flex-1" />
+            <Skeleton className="h-8 w-16" />
+            <Skeleton className="size-8 rounded-full" />
+          </div>
         </div>
-        <Skeleton className="mt-3 h-4 w-40" />
-      </div>
-      <div className="flex flex-col gap-3 p-3">
-        {Array.from({ length: 4 }, (_, i) => (
-          <Skeleton key={i} className="h-48 rounded-2xl" />
-        ))}
+        <div className="hidden border-b border-border lg:block">
+          <div className="mx-auto flex max-w-5xl items-center gap-3 px-8 py-4">
+            <Skeleton className="h-10 w-80" />
+          </div>
+        </div>
+
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pt-4 md:px-6 md:pt-6 lg:max-w-5xl lg:px-8">
+          <Skeleton className="h-9 w-64 lg:hidden" />
+          <Skeleton className="h-[136px] rounded-2xl bg-card shadow-card" />
+          <div className="grid grid-cols-3 gap-3 lg:hidden">
+            {Array.from({ length: 3 }, (_, i) => (
+              <Skeleton key={i} className="h-[84px] rounded-2xl bg-card shadow-card" />
+            ))}
+          </div>
+          <div className="mt-2 flex flex-col gap-3">
+            {Array.from({ length: 4 }, (_, i) => (
+              <Skeleton key={i} className="h-40 rounded-2xl bg-card shadow-card" />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

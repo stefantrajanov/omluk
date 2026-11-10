@@ -13,7 +13,10 @@ import { orderPieces } from "@/lib/capacity";
 import type { Order } from "@/lib/orders/types";
 import { cn } from "@/lib/utils";
 import { CalendarDrawer } from "./calendar-drawer";
-import { DayHeader } from "./day-header";
+import { DayHeader, DayTitle } from "./day-header";
+import { DaySummary } from "./day-summary";
+import { Sidebar } from "./sidebar";
+import { WeekStrip } from "./week-strip";
 
 type Props = {
   date: string;
@@ -59,35 +62,58 @@ export function DayScreen({ date, today, orders, weekCounts }: Props) {
   }
 
   return (
-    <div className="mx-auto min-h-dvh w-full max-w-md bg-background shadow-[0_0_0_1px_var(--border)]">
-      <DayHeader
+    <div className="min-h-dvh lg:grid lg:grid-cols-[360px_minmax(0,1fr)]">
+      <Sidebar
         date={date}
         today={today}
         weekCounts={weekCounts}
         totals={totals}
+        revision={orders}
         onSelectDate={goTo}
-        onOpenCalendar={() => setCalendarOpen(true)}
+        onNewOrder={() => openForm()}
       />
 
-      <main className={cn("transition-opacity", navigating && "opacity-50")} aria-busy={navigating}>
-        <Timeline
+      <div className="min-w-0">
+        <DayHeader
           date={date}
-          orders={orders}
-          nowMinutes={nowMinutes}
-          onOpenOrder={(order) => setDetailsId(order.id)}
-          onAddAt={(time) => openForm(undefined, time)}
+          today={today}
+          onSelectDate={goTo}
+          onOpenCalendar={() => setCalendarOpen(true)}
         />
-      </main>
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-md justify-end px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
-        <Button
-          size="lg"
-          onClick={() => openForm()}
-          className="pointer-events-auto h-14 rounded-full px-6 text-lg shadow-lg shadow-primary/30"
-        >
-          <PlusIcon className="size-6" />
-          Нова нарачка
-        </Button>
+        <div className="mx-auto w-full max-w-3xl pb-safe lg:max-w-5xl">
+          <div className="flex flex-col gap-4 px-4 pt-4 md:px-6 md:pt-6 lg:px-8">
+            <DayTitle date={date} today={today} />
+            <WeekStrip date={date} today={today} counts={weekCounts} onSelect={goTo} />
+            <DaySummary totals={totals} className="lg:hidden" />
+          </div>
+
+          <main
+            className={cn("mt-2 transition-opacity md:mt-4 lg:px-2", navigating && "opacity-50")}
+            aria-busy={navigating}
+          >
+            <Timeline
+              date={date}
+              orders={orders}
+              nowMinutes={nowMinutes}
+              onOpenOrder={(order) => setDetailsId(order.id)}
+              onAddAt={(time) => openForm(undefined, time)}
+            />
+          </main>
+        </div>
+      </div>
+
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 lg:hidden">
+        <div className="mx-auto flex max-w-3xl justify-end px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:px-6">
+          <Button
+            size="lg"
+            onClick={() => openForm()}
+            className="pointer-events-auto rounded-full pr-6 pl-5 shadow-float"
+          >
+            <PlusIcon className="size-[22px]" strokeWidth={2.5} />
+            Нова нарачка
+          </Button>
+        </div>
       </div>
 
       <CalendarDrawer
@@ -95,6 +121,7 @@ export function DayScreen({ date, today, orders, weekCounts }: Props) {
         onOpenChange={setCalendarOpen}
         date={date}
         today={today}
+        weekCounts={weekCounts}
         onSelect={(d) => {
           setCalendarOpen(false);
           goTo(d);

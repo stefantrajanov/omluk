@@ -1,25 +1,18 @@
 "use client";
 
-import { useRef, useState, useTransition, type FormEvent } from "react";
+import { useId, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { ResponsiveSheet } from "@/components/ui/responsive-sheet";
 import { formatPrice } from "@/lib/capacity";
 import { CLOSE_HOUR, OPEN_HOUR, formatHM, nextSlot, todayISO } from "@/lib/dates";
 import { createOrder, updateOrder } from "@/lib/orders/actions";
 import type { Order, OrderInput } from "@/lib/orders/types";
+import { cn } from "@/lib/utils";
 import { CapacityLine } from "./capacity-line";
 import { DateChips } from "./date-chips";
+import { FieldMessage, GroupedCard, GroupedSection } from "./grouped-section";
 import { ItemList, ItemPicker, addDraftItem, newDraftKey, type DraftItem } from "./item-builder";
 import { TimePicker } from "./time-picker";
 
@@ -33,18 +26,12 @@ type Props = {
 };
 
 export function OrderFormDrawer(props: Props) {
-  const { open, onOpenChange } = props;
-  // New body (fresh state) on every open.
+  const { open } = props;
+  // Fresh form state on every open; the same instance animates closed.
   const [session, setSession] = useState({ open, key: 0 });
   if (open !== session.open) setSession({ open, key: open ? session.key + 1 : session.key });
 
-  return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="data-[vaul-drawer-direction=bottom]:max-h-[94dvh]">
-        <OrderFormBody key={session.key} {...props} />
-      </DrawerContent>
-    </Drawer>
-  );
+  return <OrderFormSheet key={session.key} {...props} />;
 }
 
 const parseHM = (time: string) => {
@@ -64,8 +51,8 @@ function initialTime(date: string, defaultTime?: string, order?: Order) {
   return { hour, minute };
 }
 
-function OrderFormBody({ order, defaultDate, defaultTime, onOpenChange, onSaved }: Props) {
-  // Snapshot so content stays stable while the drawer animates closed.
+function OrderFormSheet({ open, order, defaultDate, defaultTime, onOpenChange, onSaved }: Props) {
+  // Snapshot so content stays stable while the sheet animates closed.
   const [initial] = useState(() => {
     const date = order?.date ?? defaultDate;
     return { order, date, ...initialTime(date, defaultTime, order) };
@@ -92,6 +79,7 @@ function OrderFormBody({ order, defaultDate, defaultTime, onOpenChange, onSaved 
   const [showErrors, setShowErrors] = useState(false);
   const [pending, startTransition] = useTransition();
   const nameRef = useRef<HTMLInputElement>(null);
+  const formId = useId();
 
   const pieces = items.reduce((s, i) => s + i.quantity, 0);
   const total = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
@@ -134,63 +122,72 @@ function OrderFormBody({ order, defaultDate, defaultTime, onOpenChange, onSaved 
     });
   }
 
-  return (
-    <>
-      <DrawerHeader className="border-b pt-2 pb-3 text-left md:text-left">
-        <DrawerTitle className="text-xl font-semibold">
-          {editing ? "Измени нарачка" : "Нова нарачка"}
-        </DrawerTitle>
-        <DrawerDescription className="sr-only">
-          Внесете купувач, термин и производи.
-        </DrawerDescription>
-      </DrawerHeader>
+  const footer = (
+    <div className="flex items-center gap-4">
+      <div className="shrink-0">
+        <p className="type-footnote text-muted-foreground tabular-nums">{pieces} парч.</p>
+        <p className="type-title3 tabular-nums">{formatPrice(total)}</p>
+      </div>
+      <Button
+        type="submit"
+        form={formId}
+        size="lg"
+        className="min-w-0 flex-1 md:ml-auto md:max-w-64"
+        disabled={pending}
+      >
+        {pending && <Loader2 className="animate-spin" aria-hidden />}
+        {editing ? "Зачувај измени" : "Зачувај нарачка"}
+      </Button>
+    </div>
+  );
 
-      <form onSubmit={handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
-        <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto overscroll-contain px-4 py-4">
-          <section className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="order-name">Име на купувач</Label>
-              <Input
+  return (
+    <ResponsiveSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title={editing ? "Измени нарачка" : "Нова нарачка"}
+      description={<span className="sr-only">Внесете купувач, термин и производи.</span>}
+      footer={footer}
+      size="lg"
+    >
+      <form id={formId} onSubmit={handleSubmit} noValidate className="flex flex-col gap-6 pb-2">
+        <GroupedSection title="Клиент">
+          <GroupedCard className="divide-y divide-border">
+            <FieldRow label="Име" htmlFor="order-name" invalid={nameError}>
+              <input
                 id="order-name"
                 ref={nameRef}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                placeholder="Име на купувач"
                 autoFocus={!editing}
                 autoComplete="off"
                 enterKeyHint="next"
                 aria-invalid={nameError || undefined}
                 aria-describedby={nameError ? "order-name-error" : undefined}
+                className={rowInput}
               />
-              {nameError && (
-                <p id="order-name-error" className="text-sm text-destructive">
-                  Внесете име на купувачот.
-                </p>
-              )}
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="order-phone">
-                Телефон <span className="font-normal text-muted-foreground">(незадолжително)</span>
-              </Label>
-              <Input
+            </FieldRow>
+            <FieldRow label="Телефон" htmlFor="order-phone">
+              <input
                 id="order-phone"
                 type="tel"
                 inputMode="tel"
                 autoComplete="off"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                placeholder="Незадолжително"
+                className={cn(rowInput, "tabular-nums")}
               />
-            </div>
-          </section>
+            </FieldRow>
+          </GroupedCard>
+          {nameError && <FieldMessage id="order-name-error">Внесете име на купувачот.</FieldMessage>}
+        </GroupedSection>
 
-          <section className="flex flex-col gap-2">
-            <h3 className="text-sm font-medium">Датум</h3>
+        <GroupedSection title="Термин">
+          <GroupedCard className="flex flex-col gap-5 p-4">
             <DateChips value={date} onChange={setDate} />
-          </section>
-
-          <section className="flex flex-col gap-2">
-            <h3 className="text-sm font-medium">
-              Време <span className="font-semibold tabular-nums text-primary">{formatHM(hour, minute)}</span>
-            </h3>
+            <div className="h-px bg-border" aria-hidden />
             <TimePicker
               hour={hour}
               minute={minute}
@@ -200,40 +197,60 @@ function OrderFormBody({ order, defaultDate, defaultTime, onOpenChange, onSaved 
                 setMinute(m);
               }}
             />
-            <CapacityLine date={date} hour={hour} pieces={pieces} excludeOrderId={editing?.id} />
-          </section>
+          </GroupedCard>
+          <CapacityLine date={date} hour={hour} pieces={pieces} excludeOrderId={editing?.id} />
+        </GroupedSection>
 
-          <section className="flex flex-col gap-2">
-            <h3 className="text-sm font-medium">Производи</h3>
-            <ItemList items={items} onChange={setItems} />
-            {itemsError && (
-              <p className="text-sm text-destructive">Додадете барем еден производ.</p>
-            )}
-            <ItemPicker onAdd={(sel) => setItems((prev) => addDraftItem(prev, sel))} />
-          </section>
+        <GroupedSection title="Производи">
+          <ItemList items={items} onChange={setItems} />
+          {itemsError && <FieldMessage>Додадете барем еден производ.</FieldMessage>}
+        </GroupedSection>
 
-          <section className="flex flex-col gap-1.5">
-            <Label htmlFor="order-notes">Забелешка</Label>
-            <Textarea
+        <GroupedSection title="Додај производ">
+          <ItemPicker onAdd={(sel) => setItems((prev) => addDraftItem(prev, sel))} />
+        </GroupedSection>
+
+        <GroupedSection title="Забелешка" titleId="order-notes-label">
+          <GroupedCard>
+            <textarea
               id="order-notes"
+              aria-labelledby="order-notes-label"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              rows={2}
+              placeholder="Дополнителни барања"
+              rows={3}
+              className="field-sizing-content block min-h-24 w-full resize-none rounded-2xl bg-transparent px-4 py-3 type-body text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
             />
-          </section>
-        </div>
-
-        <div className="flex items-center gap-3 border-t bg-popover px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-          <div className="shrink-0">
-            <p className="text-lg leading-tight font-semibold tabular-nums">{formatPrice(total)}</p>
-            <p className="text-sm text-muted-foreground tabular-nums">{pieces} парч.</p>
-          </div>
-          <Button type="submit" size="lg" className="flex-1" disabled={pending}>
-            {pending && <Loader2 className="animate-spin" aria-hidden />}
-            {editing ? "Зачувај измени" : "Зачувај нарачка"}
-          </Button>
-        </div>
+          </GroupedCard>
+        </GroupedSection>
       </form>
-    </>
+    </ResponsiveSheet>
+  );
+}
+
+const rowInput =
+  "h-[52px] min-w-0 flex-1 bg-transparent type-body text-foreground outline-none placeholder:text-muted-foreground";
+
+function FieldRow({
+  label,
+  htmlFor,
+  invalid,
+  children,
+}: {
+  label: string;
+  htmlFor: string;
+  invalid?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex min-h-[52px] items-center gap-3 px-4">
+      <label
+        htmlFor={htmlFor}
+        className={cn("w-20 shrink-0 type-body transition-colors", invalid ? "text-destructive" : "text-foreground")}
+      >
+        {label}
+      </label>
+      {children}
+    </div>
   );
 }

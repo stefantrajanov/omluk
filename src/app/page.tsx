@@ -51,7 +51,7 @@ async function DayLoader({ searchParams }: Pick<PageProps<"/">, "searchParams">)
       <StatusScreen icon={<DatabaseIcon />} title="Базата не е подготвена">
         <p>Табелите за нарачки уште не се креирани.</p>
         <p className="mt-2">
-          Применете ја миграцијата <code className="rounded bg-muted px-1">supabase/migrations/0001_init.sql</code> во
+          Применете ја миграцијата <code className="rounded-md bg-muted px-1.5 py-0.5 type-footnote text-foreground">supabase/migrations/0001_init.sql</code> во
           Supabase и освежете ја страницата.
         </p>
       </StatusScreen>

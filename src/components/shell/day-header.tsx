@@ -1,52 +1,70 @@
 "use client";
 
-import { CalendarDaysIcon } from "lucide-react";
+import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
-import { SHOP_NAME } from "@/lib/config";
-import { formatLongDate } from "@/lib/dates";
-import { DaySummary, type DayTotals } from "./day-summary";
-import { WeekStrip } from "./week-strip";
+import { addDaysISO, formatLongDate } from "@/lib/dates";
 
 type Props = {
   date: string;
   today: string;
-  weekCounts: Record<string, number>;
-  totals: DayTotals;
   onSelectDate: (date: string) => void;
   onOpenCalendar: () => void;
 };
 
-export function DayHeader({ date, today, weekCounts, totals, onSelectDate, onOpenCalendar }: Props) {
-  const longDate = formatLongDate(date);
+/** Phone/tablet: translucent top bar. Desktop: sticky large-title bar with day navigation. */
+export function DayHeader({ date, today, onSelectDate, onOpenCalendar }: Props) {
+  const isToday = date === today;
 
   return (
-    <header className="sticky top-0 z-30 border-b bg-background/95 pt-safe backdrop-blur supports-backdrop-filter:bg-background/85">
-      <div className="flex items-center gap-2 px-4 pt-3">
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-heading text-sm font-semibold text-primary">{SHOP_NAME}</p>
-          <h1 className="truncate text-xl leading-tight font-bold first-letter:uppercase">
-            {longDate}
-          </h1>
+    <>
+      <header className="sticky top-0 z-30 border-b border-border bg-background/80 pt-safe backdrop-blur-xl backdrop-saturate-150 lg:hidden">
+        <div className="mx-auto flex h-14 max-w-3xl items-center gap-2 px-4 md:px-6">
+          <Logo variant="horizontal" className="h-8 w-auto shrink-0 text-foreground" />
+          <div className="flex-1" />
+          <Button variant="ghost" onClick={() => onSelectDate(today)} disabled={isToday} className="px-3">
+            Денес
+          </Button>
+          <Button variant="ghost" size="icon" onClick={onOpenCalendar} aria-label="Отвори календар">
+            <CalendarDaysIcon className="size-[22px]" />
+          </Button>
         </div>
-        <Button
-          variant={date === today ? "secondary" : "outline"}
-          onClick={() => onSelectDate(today)}
-          disabled={date === today}
-          className="disabled:opacity-60"
-        >
-          Денес
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={onOpenCalendar}
-          aria-label="Отвори календар"
-        >
-          <CalendarDaysIcon />
-        </Button>
-      </div>
-      <WeekStrip date={date} today={today} counts={weekCounts} onSelect={onSelectDate} />
-      <DaySummary totals={totals} />
-    </header>
+      </header>
+
+      <header className="sticky top-0 z-30 hidden border-b border-border bg-background/80 backdrop-blur-xl backdrop-saturate-150 lg:block">
+        <div className="mx-auto flex max-w-5xl items-center gap-3 px-8 py-4">
+          <h1 className="min-w-0 flex-1 truncate type-large-title first-letter:uppercase">{formatLongDate(date)}</h1>
+          <Button
+            variant="secondary"
+            size="icon"
+            onClick={() => onSelectDate(addDaysISO(date, -1))}
+            aria-label="Претходен ден"
+          >
+            <ChevronLeftIcon strokeWidth={2.5} />
+          </Button>
+          <Button variant="secondary" onClick={() => onSelectDate(today)} disabled={isToday}>
+            Денес
+          </Button>
+          <Button
+            variant="secondary"
+            size="icon"
+            onClick={() => onSelectDate(addDaysISO(date, 1))}
+            aria-label="Следен ден"
+          >
+            <ChevronRightIcon strokeWidth={2.5} />
+          </Button>
+        </div>
+      </header>
+    </>
+  );
+}
+
+/** Large-title date for phone/tablet; desktop shows it in the sticky header. */
+export function DayTitle({ date, today }: { date: string; today: string }) {
+  return (
+    <div className="lg:hidden">
+      {date === today && <p className="type-subhead font-semibold text-primary">Денес</p>}
+      <h1 className="type-title1 text-balance first-letter:uppercase md:type-large-title">{formatLongDate(date)}</h1>
+    </div>
   );
 }
